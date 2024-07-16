@@ -12,17 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Deploy this DaemonSet to configure kubelet log rotation on nodes with the
-# "kubelet-log-config=true" label.
+# Deploy this DaemonSet to configure kubelet on nodes with the
+# "cloud.google.com/gke-spot=true" label.
 #
-# Change the values of CONTAINER_LOG_MAX_SIZE and CONTAINER_LOG_MAX_FILES to
-# suit your needs.
-#
-# WARNING: Changing the kubelet log rotation configuration requires a kubelet
-# restart. Therefore, in order to avoid disrupting your workloads, it is
-# recommended to create a new node pool with the "kubelet-log-config=true" label
-# in your cluster, deploy the DaemonSet to configure kubelet log rotation in
-# that node pool, and then migrate your workloads to the new node pool.
+# WARNING: Changing the kubelet configuration requires a kubelet
+# restart.
 
 apiVersion: apps/v1
 kind: DaemonSet
@@ -59,9 +53,6 @@ spec:
         - |
           set -xeuo pipefail
 
-          # Configure the kubelet log rotation behavior.
-          # $1: Field name in kubelet configuration.
-          # $2: Value for the kubelet config field.
           function set-kubelet-config() {
             echo 'Editing kubelet config file'
             sed -i "s/GracefulNodeShutdown: true/GracefulNodeShutdown: false/g" ${KUBELET_CONF_FILE}
@@ -73,7 +64,6 @@ spec:
           set-kubelet-config
           echo "Restarting kubelet..."
           chroot /host nsenter -a -t1 -- systemctl restart kubelet.service
-          sleep 100000000000000
           echo "Success!"
         volumeMounts:
         - name: host
